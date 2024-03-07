@@ -15,7 +15,7 @@ I started with a repo I found on github, but I can't find it anymore. Sorry for 
 ## Installation
 
 ```console
-pip install roku
+pip install .
 ```
 
 ## License
