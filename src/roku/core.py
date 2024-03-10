@@ -2,6 +2,8 @@ import curses
 import logging
 import socket
 import string
+from contextlib import contextmanager
+from dataclasses import dataclass
 from enum import Enum
 
 import requests
@@ -128,27 +130,41 @@ def draw(mode, stdscr):
     stdscr.refresh()
 
 
-def main(*, debug=False):
-    logger.info('Searching for a Roku device...')
-    response_text = find_roku()
-    response = HTTPResponse(response_text)
-    location = response.headers['location']
-    mode = Mode.NORMAL
+@contextmanager
+def scr():
     try:
-        stdscr = curses.initscr()
-        stdscr.keypad(1)
-        draw(mode, stdscr)
-        while key := stdscr.getch():
-            out = KEYPRESS_MAP[mode].get(key)
-            if isinstance(out, Mode):
-                if out == Mode.EXIT:
-                    break
-                mode = out
-                draw(mode, stdscr)
-            elif debug:
-                draw(mode, stdscr)
-                stdscr.addstr(8, 0, f'   key pressed: {out} --> {key}')
-            else:
-                keypress(location, out)
+        yield curses.initscr()
     finally:
         curses.endwin()
+
+
+@dataclass
+class Roku:
+    location: str
+    mode: Mode = Mode.NORMAL
+
+    @classmethod
+    def find(cls):
+        logger.info('Searching for a Roku device...')
+        response_text = find_roku()
+        response = HTTPResponse(response_text)
+        location = response.headers['location']
+        return cls(location=location)
+
+    def act(self, action):
+        if isinstance(action, Mode):
+            if action == Mode.EXIT:
+                return
+            self.mode = action
+        keypress(self.location, action)
+
+    def run(self, *, debug=False):
+        with scr() as stdscr:
+            stdscr.keypad(yes=True)
+            draw(self.mode, stdscr)
+            while key := stdscr.getch():
+                action = KEYPRESS_MAP[self.mode].get(key)
+                self.act(action)
+                draw(self.mode, stdscr)
+                if debug:
+                    stdscr.addstr(8, 0, f'   key pressed: {key} --> {action}')
