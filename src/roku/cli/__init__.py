@@ -32,7 +32,9 @@ class CustomMultiCommand(click.Group):
         return decorator
 
 
-@click.group(cls=CustomMultiCommand, context_settings={"help_option_names": ["-h", "--help"]}, invoke_without_command=True)
+@click.group(cls=CustomMultiCommand,
+             context_settings={"help_option_names": ["-h", "--help"]},
+             invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="roku")
 @click.option('--debug', '-d', is_flag=True, help='debug mode?')
 @click.pass_context
