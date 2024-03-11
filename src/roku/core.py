@@ -160,7 +160,7 @@ class Roku:
 
     def run(self, *, debug=False):
         with scr() as stdscr:
-            stdscr.keypad(yes=True)
+            stdscr.keypad(True)
             draw(self.mode, stdscr)
             while key := stdscr.getch():
                 action = KEYPRESS_MAP[self.mode].get(key)
